@@ -1,0 +1,6 @@
+cat <<EOF > terraform/.gitignore
+.terraform/
+terraform.tfstate
+terraform.tfstate.backup
+EOF
+
