@@ -1,0 +1,50 @@
+pipeline {
+    agent any
+
+    environment {
+        DOCKERHUB_CREDENTIALS = credentials('dockerhub-cred')
+        DOCKER_REPO = "itachi1212/myflix"
+    }
+
+    stages {
+        stage('Checkout Code') {
+            steps {
+                git branch: 'main', url: 'https://github.com/bhushannikam12/myflix-devops.git'
+            }
+        }
+
+        stage('Build Docker Images') {
+            steps {
+                sh '''
+                cd docker
+
+                for service in app/* ; do
+                    service_name=$(basename $service)
+                    echo "Building Docker image for $service_name"
+
+                    docker build -t $DOCKER_REPO-$service_name:latest \
+                      --build-arg SERVICE=$service_name \
+                      .
+
+                done
+                '''
+            }
+        }
+
+        stage('Push Images to DockerHub') {
+            steps {
+                sh '''
+                echo $DOCKERHUB_CREDENTIALS_PSW | docker login -u $DOCKERHUB_CREDENTIALS_USR --password-stdin
+
+                cd docker
+
+                for service in app/* ; do
+                    service_name=$(basename $service)
+                    docker push $DOCKER_REPO-$service_name:latest
+                done
+                '''
+            }
+        }
+    }
+}
+
